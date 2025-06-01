@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Character Counter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: monospace;
+            background: #222;
+            color: #ddd;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .editor-container {
+            max-width: 1000px;
+            width: 90%;
+            background: #333;
+            border: 1px solid #444;
+            height: 80vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .line-numbers {
+            background: #2a2a2a;
+            padding: 10px 5px;
+            border-right: 1px solid #444;
+            user-select: none;
+            width: 50px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #lineNumbersContent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        
+        .line-number {
+            color: #7db8ff;
+            text-align: right;
+            padding: 0 5px;
+            height: 20px;
+            line-height: 20px;
+            white-space: nowrap;
+        }
+        
+        .line-number.hidden {
+            visibility: hidden;
+        }
+        
+        .editor-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #editor {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            background: #333;
+            color: #ddd;
+            border: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 20px;
+            outline: none;
+            overflow: auto;
+            tab-size: 4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="line-numbers">
+            <div id="lineNumbersContent"></div>
+        </div>
+        <div class="editor-area">
+            <textarea id="editor" placeholder="Type here..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const lineNumbersContent = document.getElementById('lineNumbersContent');
+        let mirror = null;
+        
+        function getMirrorElement() {
+            if (!mirror) {
+                mirror = document.createElement('div');
+                mirror.style.position = 'absolute';
+                mirror.style.top = '-9999px';
+                mirror.style.left = '-9999px';
+                mirror.style.whiteSpace = 'pre-wrap';
+                mirror.style.wordWrap = 'break-word';
+                mirror.style.fontFamily = 'monospace';
+                mirror.style.fontSize = '14px';
+                mirror.style.padding = '10px';
+                mirror.style.boxSizing = 'border-box';
+                mirror.style.lineHeight = '20px';
+                document.body.appendChild(mirror);
+            }
+            return mirror;
+        }
+        
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n');
+            const counts = lines.map(line => Math.min(line.replace(/\s/g, '').length, 99999));
+            const mirror = getMirrorElement();
+            mirror.style.width = (editor.clientWidth - 20) + 'px';
+            
+            let lineNumbersHTML = '';
+            let totalHeight = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const count = counts[i];
+                
+                mirror.textContent = line || ' ';
+                const visualLineCount = mirror.getClientRects().length;
+                
+                const hiddenClass = count <= 0 ? ' hidden' : '';
+                lineNumbersHTML += `<div class="line-number${hiddenClass}">${count}</div>`;
+                
+                for (let j = 1; j < visualLineCount; j++) {
+                    lineNumbersHTML += `<div class="line-number"></div>`;
+                }
+                
+                totalHeight += visualLineCount * 20;
+            }
+            
+            lineNumbersContent.style.height = totalHeight + 'px';
+            lineNumbersContent.innerHTML = lineNumbersHTML;
+            lineNumbersContent.style.marginTop = (10 - editor.scrollTop % 20) + 'px';
+            lineNumbersContent.style.transform = `translateY(-${editor.scrollTop}px)`;
+        }
+        
+        function syncScroll() {
+            lineNumbersContent.style.marginTop = (10 - editor.scrollTop % 20) + 'px';
+            lineNumbersContent.style.transform = `translateY(-${editor.scrollTop}px)`;
+        }
+        
+        editor.addEventListener('input', updateLineNumbers);
+        editor.addEventListener('scroll', syncScroll);
+        window.addEventListener('resize', updateLineNumbers);
+        
+        updateLineNumbers();
+    </script>
+</body>
+</html>
